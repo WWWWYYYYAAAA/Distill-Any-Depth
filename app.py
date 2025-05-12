@@ -87,11 +87,14 @@ def gradio_interface(image, model_size):
 
     # 根据用户选择的模型大小加载对应的 checkpoint
     if model_size == "large":
-        checkpoint_path = hf_hub_download(repo_id=f"xingyang1/Distill-Any-Depth", filename=f"large/model.safetensors", repo_type="model")
+        checkpoint_path = "./model/model_base.safetensors"
+        # checkpoint_path = hf_hub_download(repo_id=f"xingyang1/Distill-Any-Depth", filename=f"large/model.safetensors", repo_type="model")
     elif model_size == "base":
-        checkpoint_path = hf_hub_download(repo_id=f"xingyang1/Distill-Any-Depth", filename=f"base/model.safetensors", repo_type="model")
+        checkpoint_path = "./model/model_base.safetensors"
+        # checkpoint_path = hf_hub_download(repo_id=f"xingyang1/Distill-Any-Depth", filename=f"base/model.safetensors", repo_type="model")
     elif model_size == "small":
-        checkpoint_path = hf_hub_download(repo_id=f"xingyang1/Distill-Any-Depth", filename=f"small/model.safetensors", repo_type="model")
+        checkpoint_path = "./model/model_base.safetensors"
+        # checkpoint_path = hf_hub_download(repo_id=f"xingyang1/Distill-Any-Depth", filename=f"small/model.safetensors", repo_type="model")
     else:
         raise ValueError(f"Unknown model size: {model_size}")
 
