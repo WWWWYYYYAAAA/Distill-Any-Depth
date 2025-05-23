@@ -29,7 +29,7 @@ class ResidualBlock(nn.Module):
         return out
     
 class ResNet(nn.Module):
-    def __init__(self, classes=10):
+    def __init__(self, outsize=80):
         super().__init__()
         self.in_channels = 32
         
@@ -49,7 +49,7 @@ class ResNet(nn.Module):
         # 分类头
         self.avgpool = nn.AdaptiveAvgPool2d((20, 20))  # 替代原全连接层
         self.fc = nn.Linear(64*20*20, 6400)
-        self.avgpool2 = nn.AdaptiveAvgPool2d((80, 80)) 
+        self.avgpool2 = nn.AdaptiveAvgPool2d((outsize, outsize)) 
         # self.fc = nn.Linear(10000, 10000)
 
     def _make_layer(self, out_channels, blocks, stride=1):
