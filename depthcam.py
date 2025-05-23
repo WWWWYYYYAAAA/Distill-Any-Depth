@@ -60,7 +60,11 @@ model = model.to(device)
 
 
 t1, t2, t3, t4 = 0, 0, 0, 0
-
+size_h = 200
+size_w = 200
+ones_subarray = np.zeros((size_h, size_w, 3))
+start_h = 160
+start_w = 160
 # 处理函数
 def process_frame(image):
     # # 转换颜色空间并调整尺寸
@@ -96,6 +100,9 @@ def process_frame(image):
 
     # Preprocess the image
     image_np = np.array(image)[..., ::-1] / 255
+    image_np[start_h:start_h+size_h, start_w:start_w+size_w, :] = ones_subarray
+    # image_np[start_h+20:start_h+size_h+20, start_w+20:start_w+size_w+20, :] = ones_subarray
+    # print(np.shape(image_np))
     t2 = time.time()
     transform = Compose([
         Resize(700, 700, resize_target=False, keep_aspect_ratio=False, ensure_multiple_of=14, resize_method='lower_bound', image_interpolation_method=cv2.INTER_CUBIC),
@@ -105,7 +112,7 @@ def process_frame(image):
 
     image_tensor = transform({'image': image_np})['image']
     image_tensor = torch.from_numpy(image_tensor).unsqueeze(0).to(device)
-    
+    # print(image_tensor.shape)
     with torch.no_grad():  # Disable autograd since we don't need gradients on CPU
         pred_disp, _ = model(image_tensor)
     torch.cuda.empty_cache()
@@ -114,6 +121,8 @@ def process_frame(image):
     
     # Normalize depth map
     pred_disp = (pred_disp_np - pred_disp_np.min()) / (pred_disp_np.max() - pred_disp_np.min())
+    # pred_disp = pred_disp_np / 10
+    print("\r",pred_disp_np.max(),pred_disp_np.min(),end=" ")
     # Colorize depth map
     cmap = "Spectral_r"
     depth_colored = colorize_depth_maps(pred_disp[None, ..., None], 0, 1, cmap=cmap).squeeze()  # Ensure correct dimension
@@ -127,7 +136,7 @@ def process_frame(image):
     # Resize to match the original image dimensions (height, width)
     h, w = image_np.shape[:2]
     depth_colored_hwc = cv2.resize(depth_colored_hwc, (w, h), cv2.INTER_LINEAR)
-    
+    # print(depth_colored_hwc.shape, image_np.shape, h, w)
     # Convert to a PIL image
     # depth_image = Image.fromarray(depth_colored_hwc)
     return depth_colored_hwc
@@ -144,7 +153,7 @@ try:
             
         # 处理帧并显示结果
         depth_frame = process_frame(frame)
-        # depth_frame = np.hstack((frame, depth_frame))
+        # depth_frame = np.hstack((orin_frame, depth_frame))
         end_time = time.time()
         processing_time = end_time - start_time
         fps = 0.1*fps + 0.9*(1/processing_time)  # 平滑处理
