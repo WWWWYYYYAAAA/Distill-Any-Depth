@@ -31,25 +31,26 @@ class ResidualBlock(nn.Module):
 class ResNet(nn.Module):
     def __init__(self, outsize=80):
         super().__init__()
-        self.in_channels = 32
-        
+        self.in_channels = 64
+        self.outsize = outsize
         # 初始卷积层
         self.conv1 = nn.Sequential(
-            nn.Conv2d(3, 32, kernel_size=5, stride=1, padding=2),
-            nn.BatchNorm2d(32),
+            nn.Conv2d(3, self.in_channels, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(self.in_channels),
             nn.ReLU(),
             nn.MaxPool2d(2),
         )
         
         # 残差块堆叠
-        self.layer1 = self._make_layer(32, 2, stride=1)
-        # self.layer2 = self._make_layer(512, 2, stride=2)
-        self.layer3 = self._make_layer(64, 2, stride=2)
+        self.layer1 = self._make_layer(self.in_channels, 2, stride=1)
+        # self.layer2 = self._make_layer(128, 2, stride=2)
+        self.layer3 = self._make_layer(self.in_channels, 2, stride=2)
         
         # 分类头
         self.avgpool = nn.AdaptiveAvgPool2d((20, 20))  # 替代原全连接层
-        self.fc = nn.Linear(64*20*20, 6400)
-        self.avgpool2 = nn.AdaptiveAvgPool2d((outsize, outsize)) 
+        self.fc = nn.Linear(self.in_channels*20*20, self.outsize*outsize)
+        self.avgpool2 = nn.AdaptiveAvgPool2d((self.outsize, self.outsize)) 
+        self.finalrelu = nn.ReLU()
         # self.fc = nn.Linear(10000, 10000)
 
     def _make_layer(self, out_channels, blocks, stride=1):
@@ -76,6 +77,7 @@ class ResNet(nn.Module):
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
         x = self.fc(x)
+        x = self.finalrelu(x)
         # x = x.view(100, 100)
         # x = self.avgpool2(x)
         return x
@@ -83,7 +85,7 @@ class ResNet(nn.Module):
 if __name__ == '__main__':
 # 测试数据
     x = torch.rand((2, 3, 28, 28))
-    cnn = ResNet(classes=10)
+    cnn = ResNet(outsize=120)
     print(cnn)
     out = cnn(x)
     print(out)
