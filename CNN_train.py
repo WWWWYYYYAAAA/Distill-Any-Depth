@@ -167,7 +167,7 @@ if __name__ == '__main__':
     # learning rate
     lr = 0.01
     # epoch
-    epoch = 100
+    epoch = 500
     # checkpoints,模型保存路径
     checkpoints = 'ResNet'
     os.makedirs(checkpoints, exist_ok=True)
@@ -203,7 +203,7 @@ if __name__ == '__main__':
     #load .mat
     file_path = "data/nyu_depth_v2_labeled.mat"
     train_dataset = H5Dataset(file_path)
-    train_data = DataLoader(train_dataset, batch_size=24, shuffle=True, num_workers=4)
+    train_data = DataLoader(train_dataset, batch_size=64, shuffle=True, num_workers=4)
     train_data_size = train_dataset.__len__()
     # 加载模型
     model = torch.load(checkpoints+"/best_model.pth", weights_only=False)
@@ -219,6 +219,6 @@ if __name__ == '__main__':
     # 损失函数
     loss_func = nn.CrossEntropyLoss()
     # 优化器，使用SGD,可换Adam
-    optimizer = torch.optim.SGD(model.parameters(), lr=lr, weight_decay=5e-3)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=2e-3)
     # 训练
     train(model, loss_func, optimizer, checkpoints, epoch)
