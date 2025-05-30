@@ -1,3 +1,7 @@
 model/
 data/
 ResNet/
+test/
+MSNet/
+*.pt
+*.pth

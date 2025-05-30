@@ -26,7 +26,7 @@ class H5Dataset(Dataset):
     def __getitem__(self, idx):
         return (
             torch.from_numpy(self.images[idx]).float()/255,
-            torch.from_numpy(self.labels[idx]).float()/255
+            torch.from_numpy(self.labels[idx]).float()/10
         )
 
 

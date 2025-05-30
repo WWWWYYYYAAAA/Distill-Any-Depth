@@ -170,7 +170,7 @@ if __name__ == '__main__':
     # batchsize
     # bs = 5000
     # learning rate
-    lr = 0.000001
+    lr = 0.0000001
     # epoch
     epoch = 150
     # checkpoints,模型保存路径

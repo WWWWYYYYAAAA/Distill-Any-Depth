@@ -22,6 +22,7 @@ with h5py.File(file_path, 'r') as file:
     depths = file['depths']
     num_samples = images.shape[0]
     print(f"发现 {num_samples} 个样本。图像形状：{images.shape}，深度图形状：{depths.shape}")
+    #发现 1449 个样本。图像形状：(1449, 3, 640, 480)，深度图形状：(1449, 640, 480)
 # out = np.hstack((np.array(images), np.array(depths)))
 
 # print(out.shape)
