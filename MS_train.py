@@ -1,7 +1,7 @@
 
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader, Dataset, Subset
 from torchvision import transforms
 import random
 import os
@@ -13,6 +13,9 @@ from torchvision.transforms import Compose
 from distillanydepth.midas.transforms import Resize, NormalizeImage, PrepareForNet
 from PIL import Image
 from tqdm import tqdm
+import random
+
+
 
 class H5Dataset(Dataset):
     def __init__(self, file_path, image_key='images', label_key='depths'):
@@ -32,6 +35,18 @@ class H5Dataset(Dataset):
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
+outx = 160
+outy = 120
+
+resize_transform = transforms.Resize(
+    size=(outx, outy),         # 目标尺寸
+    interpolation=Image.BILINEAR  # 插值方法
+)
+resize_transform2 = transforms.Resize(
+    size=(640, 480),         # 目标尺寸
+    interpolation=Image.BILINEAR  # 插值方法
+)
+resize_IN = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
 # 将数据集划分训练集和验证集
 def split_data(files):
@@ -66,20 +81,26 @@ def train(model, loss_func, optimizer, checkpoints, epoch):
         for i, (inputs, labels) in enumerate(tqdm(train_data)):
             # print(batch_size)
             # print(i, inputs, labels)
-            resize_transform = transforms.Resize(
-                size=(outx, outy),         # 目标尺寸
-                interpolation=Image.BILINEAR  # 插值方法
-            )
-            resize_IN = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+            rx = random.randint(0, 319)
+            ry = random.randint(0, 239)
+            Kr = random.randint(0, 1000)
+            
             # Compose([
             #     # Resize(700, 700, resize_target=False, keep_aspect_ratio=False, ensure_multiple_of=14, resize_method='lower_bound', image_interpolation_method=cv2.INTER_CUBIC),
             #     NormalizeImage(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
             #     PrepareForNet()
             # ])
-            for i in range(inputs.shape[0]):
-                # print(inputs[i,:,:,:].shape)
-                inputs[i,:,:,:] = resize_IN(inputs[i,:,:,:])
-            labels = resize_transform(labels)
+            if Kr%3 <= 1 or random_mode:
+                inputs = inputs[:,:,rx:rx+320,ry:ry+240]
+                labels = labels[:,rx:rx+320,ry:ry+240]
+                for i in range(inputs.shape[0]):
+                    inputs[i,:,:,:] = resize_IN(inputs[i,:,:,:])
+                inputs = resize_transform2(inputs)
+                labels = resize_transform(labels)
+            else:    
+                for i in range(inputs.shape[0]):
+                    inputs[i,:,:,:] = resize_IN(inputs[i,:,:,:])
+                labels = resize_transform(labels)
             inputs = inputs.to(device)
             labels = labels.to(device)
             # transform = Compose([
@@ -110,53 +131,69 @@ def train(model, loss_func, optimizer, checkpoints, epoch):
             train_loss += loss.item()
             # train_acc += acc.item()
         # 验证集进行验证
-        # model.eval()
-        # with torch.no_grad():
-        #     for i, (inputs, labels) in enumerate(val_data):
-        #         inputs = inputs.to(device)
-        #         labels = labels.to(device)
-        #         # 预测输出
-        #         outputs = model(inputs)
-        #         # 计算损失
-        #         loss = loss_func(outputs, labels)
-        #         # 计算准确率
-        #         output = nn.functional.softmax(outputs, dim=1)
-        #         pred = torch.argmax(output, dim=1)
-        #         # print(pred,'================')
-        #         # print(pred==labels,'=====----------======')
-        #         acc = torch.sum(pred == labels)
-        #         # acc = calculat_acc(outputs, labels)
-        #         val_loss += loss.item()
-        #         val_acc += acc.item()
+        model.eval()
+        with torch.no_grad():
+            for i, (inputs, labels) in enumerate(tqdm(val_data)):
+                Kr = random.randint(0, 1000)
+                if Kr%3<=1:
+                    rx = random.randint(0, 319)
+                    ry = random.randint(0, 239)
+                    inputs = inputs[:,:,rx:rx+320,ry:ry+240]
+                    labels = labels[:,rx:rx+320,ry:ry+240]
+                    for i in range(inputs.shape[0]):
+                        inputs[i,:,:,:] = resize_IN(inputs[i,:,:,:])
+                    inputs = resize_transform2(inputs)
+                    labels = resize_transform(labels)
+                else:
+                    for i in range(inputs.shape[0]):
+                        inputs[i,:,:,:] = resize_IN(inputs[i,:,:,:])
+                        labels = resize_transform(labels)
+
+                inputs = inputs.to(device)
+                labels = labels.to(device)
+                # 预测输出
+                outputs = model(inputs).squeeze(dim=1)
+                # 计算损失
+                loss = loss_func(outputs, labels)
+                # 计算准确率
+                output = nn.functional.softmax(outputs, dim=1)
+                pred = torch.argmax(output, dim=1)
+                # print(pred,'================')
+                # print(pred==labels,'=====----------======')
+                acc = torch.sum(pred == labels)
+                # acc = calculat_acc(outputs, labels)
+                val_loss += loss.item()
+                val_acc += acc.item()
+                if i >= (val_data_size-1):
+                    break
 
         # 计算每个epoch的训练损失和精度
         train_loss_epoch = train_loss / train_data_size
-        train_acc_epoch = train_acc / train_data_size
+        # train_acc_epoch = train_acc / train_data_size
         # 计算每个epoch的验证集损失和精度
-        # val_loss_epoch = val_loss / val_data_size
+        val_loss_epoch = val_loss / val_data_size
         # val_acc_epoch = val_acc / val_data_size
         end_time = time.time()
-        # print(
-        #     'epoch:{} | time:{:.4f} | train_loss:{:.4f} | train_acc:{:.4f} | eval_loss:{:.4f} | val_acc:{:.4f}'.format(
-        #         epoch,
-        #         end_time - start_time,
-        #         train_loss_epoch,
-        #         train_acc_epoch,
-        #         val_loss_epoch,
-        #         val_acc_epoch))
         print(
-            'epoch:{} | time:{:.8f} | train_loss:{:.8f} | train_acc:{:.8f}'.format(
+            'epoch:{} | time:{:.8f} | train_loss:{:.8f} | val_loss:{:.8f}'.format(
                 epoch,
                 end_time - start_time,
                 train_loss_epoch,
-                train_acc_epoch))
+                val_loss_epoch))
+        # print(
+        #     'epoch:{} | time:{:.8f} | train_loss:{:.8f} | train_acc:{:.8f}'.format(
+        #         epoch,
+        #         end_time - start_time,
+        #         train_loss_epoch,
+        #         train_acc_epoch))
 
         # 记录验证集上准确率最高的模型
         best_model_path = checkpoints + "/" + 'best_model' + '.pth'
-        if train_loss_epoch <= best_loss:
-            best_loss = train_loss_epoch
+        if val_loss_epoch <= best_loss:
+            best_loss = val_loss_epoch
             best_epoch = epoch
             torch.save(model, best_model_path)
+        torch.save(model, checkpoints + '/last.pth')
         print('Best loss for Validation :{:.8f} at epoch {:d}'.format(best_loss, best_epoch))
         # 每迭代50次保存一次模型
         # if epoch % 50 == 0:
@@ -170,9 +207,9 @@ if __name__ == '__main__':
     # batchsize
     # bs = 5000
     # learning rate
-    lr = 0.0000001
+    lr = 0.00000001
     # epoch
-    epoch = 150
+    epoch = 10
     # checkpoints,模型保存路径
     checkpoints = 'MSNet'
     os.makedirs(checkpoints, exist_ok=True)
@@ -180,10 +217,17 @@ if __name__ == '__main__':
         transforms.ToTensor()
     ])
 
+    random_mode = 0
     #load .mat
     file_path = "data/nyu_depth_v2_labeled.mat"
-    train_dataset = H5Dataset(file_path)
-    train_data = DataLoader(train_dataset, batch_size=1, shuffle=True, num_workers=16)
+    dataset = H5Dataset(file_path)
+    val_data_size = 64
+    data_size = dataset.__len__()
+    train_dataset = Subset(dataset, range(val_data_size,data_size))
+    train_data = DataLoader(train_dataset, batch_size=1, shuffle=True, num_workers=6)
+    
+    val_dataset = Subset(dataset, range(val_data_size))
+    val_data = DataLoader(val_dataset, batch_size=1, shuffle=True, num_workers=6)
     train_data_size = train_dataset.__len__()
     # 加载模型
     model = torch.load(checkpoints+"/best_model.pth", weights_only=False)
@@ -193,8 +237,8 @@ if __name__ == '__main__':
     
     # GPU是否可用，如果可用，则使用GPU
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    outx = 160
-    outy = 120
+    # outx = 160
+    # outy = 120
     print(device)
     model.to(device)
     # 损失函数
@@ -203,6 +247,6 @@ if __name__ == '__main__':
     loss_func = DepthLoss
     # loss_func = nn.L1Loss()
     # 优化器，使用SGD,可换Adam
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=1e-3)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=1e-4)
     # 训练
     train(model, loss_func, optimizer, checkpoints, epoch)
