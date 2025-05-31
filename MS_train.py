@@ -90,7 +90,7 @@ def train(model, loss_func, optimizer, checkpoints, epoch):
             #     NormalizeImage(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
             #     PrepareForNet()
             # ])
-            if Kr%3 <= 1 or random_mode:
+            if Kr%5 <= 0 or random_mode:
                 inputs = inputs[:,:,rx:rx+320,ry:ry+240]
                 labels = labels[:,rx:rx+320,ry:ry+240]
                 for i in range(inputs.shape[0]):
@@ -135,7 +135,7 @@ def train(model, loss_func, optimizer, checkpoints, epoch):
         with torch.no_grad():
             for i, (inputs, labels) in enumerate(tqdm(val_data)):
                 Kr = random.randint(0, 1000)
-                if Kr%3<=1:
+                if Kr%5<=0:
                     rx = random.randint(0, 319)
                     ry = random.randint(0, 239)
                     inputs = inputs[:,:,rx:rx+320,ry:ry+240]
@@ -207,9 +207,9 @@ if __name__ == '__main__':
     # batchsize
     # bs = 5000
     # learning rate
-    lr = 0.00000001
+    lr = 0.000000002
     # epoch
-    epoch = 10
+    epoch = 200
     # checkpoints,模型保存路径
     checkpoints = 'MSNet'
     os.makedirs(checkpoints, exist_ok=True)
@@ -221,7 +221,7 @@ if __name__ == '__main__':
     #load .mat
     file_path = "data/nyu_depth_v2_labeled.mat"
     dataset = H5Dataset(file_path)
-    val_data_size = 64
+    val_data_size = 100
     data_size = dataset.__len__()
     train_dataset = Subset(dataset, range(val_data_size,data_size))
     train_data = DataLoader(train_dataset, batch_size=1, shuffle=True, num_workers=6)
@@ -230,7 +230,7 @@ if __name__ == '__main__':
     val_data = DataLoader(val_dataset, batch_size=1, shuffle=True, num_workers=6)
     train_data_size = train_dataset.__len__()
     # 加载模型
-    model = torch.load(checkpoints+"/best_model.pth", weights_only=False)
+    model = torch.load(checkpoints+"/last.pth", weights_only=False)
     # model = MSNet_fix()
     
     # model.load_state_dict(torch.load('checkpoints/best_model.pth', weights_only=False))
