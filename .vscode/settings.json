@@ -1,3 +1,6 @@
 {
-    "cmake.sourceDirectory": "D:/KZ/DepthEstimate/Distill-Any-Depth/detectron2/tools/deploy"
+    "cmake.sourceDirectory": "D:/KZ/DepthEstimate/Distill-Any-Depth/detectron2/tools/deploy",
+    "files.associations": {
+        "JLX12864G..-P.C": "cpp"
+    }
 }

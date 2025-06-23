@@ -5,3 +5,4 @@ test/
 MSNet/
 *.pt
 *.pth
+*.mat

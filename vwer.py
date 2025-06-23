@@ -23,8 +23,11 @@ if not cap.isOpened():
 # 加载模型
 device = "cuda" if torch.cuda.is_available() else "cpu"
 # checkpoint_path = "./model/model_small.safetensors"
-checkpoints = 'MSNet'
-model = torch.load(checkpoints+"/best_model.pth", weights_only=False)
+checkpoints = 'MSNet2'
+# model_path = checkpoints+"/best_model.pth"
+model_path = checkpoints+"/last.pth"
+# model_path = "test/MS_80e.pth"
+model = torch.load(model_path, weights_only=False)
 
 
 t1, t2, t3, t4 = 0, 0, 0, 0
@@ -57,8 +60,9 @@ def process_frame(image):
     depth_normalized = depth_normalized.astype(np.uint8)
     # print(depth_np)
     # 应用颜色映射并恢复原始尺寸
-    depth_colored = cv2.applyColorMap(depth_normalized, cv2.COLORMAP_INFERNO)
-    depth_colored = cv2.resize(depth_colored, (original_width, original_height))
+    # depth_colored = cv2.applyColorMap(depth_normalized, cv2.COLORMAP_INFERNO)
+    # depth_colored = cv2.resize(depth_colored, (original_width, original_height))
+    depth_colored = cv2.resize(depth_normalized, (original_width, original_height))
     return depth_colored
 
 fps = 0
@@ -78,7 +82,7 @@ try:
         processing_time = end_time - start_time
         fps = 0.1*fps + 0.9*(1/processing_time)  # 平滑处理
         cv2.putText(depth_frame, f"FPS: {fps:.1f}", (10, 30), 
-                   cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+                   cv2.FONT_HERSHEY_SIMPLEX, 1, (128, 128, 128), 2)
         cv2.imshow('RGB-Depth', depth_frame)
         # print(np.shape(frame), np.shape(depth_frame))
         # 按ESC退出
