@@ -15,7 +15,7 @@ from PIL import Image
 from tqdm import tqdm
 import random
 import numpy as np
-
+from disp_loss import log_loss
 import torchvision.transforms.functional as TF
 
 
@@ -53,8 +53,8 @@ class H5DatasetLarge(Dataset):
   
         return (
             torch.from_numpy(self.images[idx]).float()/255,
-            torch.from_numpy(self.labels[idx]).float()/255*10.0,
-        )
+            torch.from_numpy(self.labels[idx]).float()/255
+            )
 
 
 
@@ -196,11 +196,11 @@ if __name__ == '__main__':
     # bs = 5000
     # learning rate
     # lr = 0.00000001
-    lr = 1e-7
+    lr = 1e-4
     # epoch
     epoch = 10
     # checkpoints,模型保存路径
-    checkpoints = 'MSNet2'
+    checkpoints = 'MSNet3'
     os.makedirs(checkpoints, exist_ok=True)
     transform = transforms.Compose([
         transforms.ToTensor()
@@ -211,9 +211,9 @@ if __name__ == '__main__':
     #load .mat
     # file_path = "data/nyu_depth_v2_labeled.mat"
     # dataset = H5Dataset(file_path)
-    # file_path = "data/ID_20000_40000.mat"
+    file_path = "data/ID_20000_40000.mat"
     # file_path = "data/ID_1000.mat"
-    file_path = "data/ID_0_20000.mat"
+    # file_path = "data/ID_0_20000.mat"
     dataset = H5DatasetLarge(file_path)
     
     data_size = dataset.__len__()
@@ -229,10 +229,10 @@ if __name__ == '__main__':
     # model_path = checkpoints+"/last22.pth"
     # model_path = "test/MS_80e.pth"
     # model_path = "MSNet/random3.pth"
-    model_path = "MSNet2/last.pth"
-    print("Model Path", model_path)
-    model = torch.load(model_path, weights_only=False)
-    # model = MSNet_fix2()
+    # model_path = "MSNet2/last.pth"
+    # print("Model Path", model_path)
+    # model = torch.load(model_path, weights_only=False)
+    model = MSNet_fix2()
     
     # model.load_state_dict(torch.load('checkpoints/best_model.pth', weights_only=False))
     
@@ -245,9 +245,9 @@ if __name__ == '__main__':
     # 损失函数
     # loss_func = MSloss
     # loss_func = nn.CrossEntropyLoss()
-    loss_func = DepthLoss
-    # loss_func = nn.L1Loss()
+    # loss_func = log_loss
+    loss_func = nn.L1Loss()
     # 优化器，使用SGD,可换Adam
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=1e-5)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=1e-4)
     # 训练
     train(model, loss_func, optimizer, checkpoints, epoch)

@@ -23,7 +23,7 @@ if not cap.isOpened():
 # 加载模型
 device = "cuda" if torch.cuda.is_available() else "cpu"
 # checkpoint_path = "./model/model_small.safetensors"
-checkpoints = 'MSNet2'
+checkpoints = 'MSNet3'
 # model_path = checkpoints+"/best_model.pth"
 model_path = checkpoints+"/last.pth"
 # model_path = "test/MS_80e.pth"
@@ -56,7 +56,9 @@ def process_frame(image):
     depth_np = depth.squeeze().cpu().numpy()
     # depth_np = depth_np.reshape(120,120)
     # print(depth_np.shape)
+    print(depth_np.min(), depth_np.max())
     depth_normalized = (depth_np - depth_np.min()) / (depth_np.max() - depth_np.min()) * 255
+    # depth_normalized = (depth_np.max() - depth_np) / (depth_np.max() - depth_np.min()) * 255
     depth_normalized = depth_normalized.astype(np.uint8)
     # print(depth_np)
     # 应用颜色映射并恢复原始尺寸

@@ -6,7 +6,7 @@ import cv2
 
 # 定义路径
 # file_path = "data/nyu_depth_v2_labeled.mat"
-file_path = "data/ID_1000.mat"
+file_path = "data/ID_0_20000.mat"
 # rgb_output_dir = "RGB"
 # depth_output_dir = "Depth"
 # os.makedirs(rgb_output_dir, exist_ok=True)
@@ -27,6 +27,7 @@ with h5py.File(file_path, 'r') as file:
     print(f"发现 {num_samples} 个样本。图像形状：{images.shape}，深度图形状：{depths.shape}")
     # img  = labels[222]
     img = images[222]
+    img2 = depths[222]
     # for i in range(640):
     #     for j in range(480):
     #         print(img[i, j], end=" ")
@@ -40,8 +41,9 @@ with h5py.File(file_path, 'r') as file:
     # img_colored = cv2.applyColorMap(img_normalized, cv2.COLORMAP_INFERNO)
     img = np.array(img)
     img = img.transpose(1,2,0)
+    img2 = np.array(img2)
+    cv2.imshow('label', img2)
     
-    cv2.imshow('label', img)
     cv2.waitKey(0)
     
 
